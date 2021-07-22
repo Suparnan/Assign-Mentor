@@ -14,7 +14,7 @@ const mentorSchema = new mongoose.Schema({
         required: true,
     },
     students: {
-        type: {String},
+        type: [String],
         required: true,
     },
 });
