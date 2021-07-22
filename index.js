@@ -9,7 +9,7 @@ const PORT = 4000;
 
 //DB connection
 
-const url = "mongodb://localhost/assignMentor";
+const url = "mongodb+srv://Suparnan:Guvi@123@cluster0.clkv3.mongodb.net/assignMentor";
 mongoose.connect(url, {useNewUrlParser: true});
 const con = mongoose.connection;
 con.on('open',() => console.log("Database Connected"));
@@ -17,10 +17,8 @@ con.on('open',() => console.log("Database Connected"));
 //middleware
 app.use(express.json());
 
-
-
 app.get('/', (request, response) => {
-    response.send('Hello Guvi')
+    response.send('Use the following URL to assign: \n Mentor API:"/mentors" \n Student API:"/students" \n API to Assign a student to Mentor: \n 1.Select one mentor and Add multiple Student:"/mentors/:mentname/:stuname"\n2. A student who has a mentor should not be shown in List:"/students/nomentors"\n API to Assign or Change Mentor for particular Student:"/mentors/change/:stuname/:mentname"\nAPI to show all students for a particular mentor:"/mentors/:name"\nNote: "The Mentor and Student name are case sensitive, Please provide the name properly"')
 });
 
 //Write API to create Mentor
@@ -45,61 +43,14 @@ app.get('/students', async (request, response) => {
 
 //Select one mentor and Add multiple Student 
 
-app.put('/mentors/Senthil/:stuname1/:stuname2/:stuname3', async (request,response) => {
-    const {stuname1} = request.params;
-    const {stuname2} = request.params;
-    const {stuname3} = request.params;
-   // const {mentname} = request.params;
-    
+app.put('/mentors/:mentname/:stuname', async (request,response) => {
+    const {mentname} = request.params;
+    const {stuname} = request.params;
+        
     try{
-    const ment = await Mentor.updateOne({"name":{$eq:"Senthil"}},{$set:{"students.param1" : stuname1, "students.param2" : stuname2, "students.param3" : stuname3}}); 
-    const stu1 = await Student.updateOne({name:{$eq:stuname1}},{$set:{mentor:"Senthil"}});
-    const stu2 = await Student.updateOne({name:{$eq:stuname2}},{$set:{mentor:"Senthil"}});
-    const stu3 = await Student.updateOne({name:{$eq:stuname3}},{$set:{mentor:"Senthil"}});
-    
-    console.log(ment);
-
-    response.send(ment);
-  
-    } catch (err){
-            response.status(500);
-            response.send(err);
-        }
-
-});
-
-app.put('/mentors/Raghav/:stuname1/:stuname2', async (request,response) => {
-    const {stuname1} = request.params;
-    const {stuname2} = request.params;
-    
-    //const {mentname} = request.params;
-    
-    try{
-    const ment = await Mentor.updateOne({"name":{$eq:"Raghav"}},{$set:{"students.param1" : stuname1, "students.param2" : stuname2 }}); 
-    const stu1 = await Student.updateOne({name:{$eq:stuname1}},{$set:{mentor:"Raghav"}});
-    const stu2 = await Student.updateOne({name:{$eq:stuname2}},{$set:{mentor:"Raghav"}});
-    
-    console.log(ment);
-
-    response.send(ment);
-  
-    } catch (err){
-            response.status(500);
-            response.send(err);
-        }
-
-});
-
-app.put('/mentors/Sneha/:stuname1/:stuname2', async (request,response) => {
-    const {stuname1} = request.params;
-    const {stuname2} = request.params;
-    //const {mentname} = request.params;
-    
-    try{
-    const ment = await Mentor.updateOne({"name":{$eq:"Sneha"}},{$set:{"students.param1" : stuname1, "students.param2" : stuname2}}); 
-    const stu1 = await Student.updateOne({name:{$eq:stuname1}},{$set:{mentor:"Sneha"}});
-    const stu2 = await Student.updateOne({name:{$eq:stuname2}},{$set:{mentor:"Sneha"}});
-   
+    const ment = await Mentor.updateOne({"name":{$eq:mentname}},{$push:{"students" : stuname}}); 
+    const stu1 = await Student.updateOne({name:{$eq:stuname}},{$set:{mentor:mentname}});
+        
     console.log(ment);
 
     response.send(ment);
@@ -124,20 +75,22 @@ app.get('/students/nomentors', async (request, response) => {
 //Write API to Assign or Change Mentor for particular Student
 
 //Select One Student and Assign one Mentor
-app.put('/mentors/:stuname/:mentname', async (request,response) => {
+app.put('/mentors/change/:stuname/:mentname', async (request,response) => {
     const {stuname} = request.params;
     const {mentname} = request.params;
     
+
     try{
-    const ment = await Mentor.updateOne({"name":{$eq:mentname}},{$set:{"students.param1" : stuname}}); 
-    const stu = await Student.updateOne({name:{$eq:stuname}},{$set:{mentor:mentname}});
-       
-    console.log(ment);
-    response.send(ment);
+    const mentrem = await Mentor.updateOne({students:{$eq:stuname}},{$pull:{"students" : stuname}});
+    const mentup = await Mentor.updateOne({name:{$eq:mentname}},{$push:{"students" : stuname}}); 
+    const stuup = await Student.updateOne({name:{$eq:stuname}},{$set:{mentor:mentname}});
+           
+    console.log(mentup,mentrem,stuup);
+    response.send(mentup);
   
     } catch (err){
             response.status(500);
-            response.send(err);
+            response.send(mentup);
         }
 
 });
